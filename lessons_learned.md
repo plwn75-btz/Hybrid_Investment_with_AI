@@ -52,10 +52,12 @@
      - **Pillar 5 (Shareholder Yield & FCF - Buffett & Lynch, Max 10 pts)**: Div Yield $\ge 4.0\%$ + Positive FCF (+10 pts).
 
 ### K. Target-Specific Button Loading State & Render.com Preparedness
-- **Issue**: Clicking `SET50` or `SET100` buttons previously modified `btnRunAiRanking` ("Run AI Selection from SET") loading text due to shared element targeting.
-- **Solution**:
-  1. Updated `runAiSelection(indexFilter)` in `static/ai_ranking.js` to change `⌛ AI Analyzing…` text strictly on the clicked button (`btnRunSet50Ranking`, `btnRunSet100Ranking`, or `btnRunAiRanking`).
-  2. Prepared `.gitignore`, `Procfile` (`gunicorn --worker-class gthread --threads 4 --timeout 300 app:app`), `runtime.txt` (`python-3.11.9`), `requirements.txt`, and deployment documentation in `README.md` for seamless GitHub and Render.com cloud deployment.
+- **Issue 1**: Clicking `SET50` or `SET100` buttons previously modified `btnRunAiRanking` ("Run AI Selection from SET") loading text due to shared element targeting.
+- **Solution 1**: Updated `runAiSelection(indexFilter)` in `static/ai_ranking.js` to change `⌛ AI Analyzing…` text strictly on the clicked button (`btnRunSet50Ranking`, `btnRunSet100Ranking`, or `btnRunAiRanking`).
+- **Issue 2 (Render.com `jinja2.exceptions.TemplateNotFound: login.html`)**: When executing inside containerized Gunicorn cloud workers, Flask's default implicit template resolution could fail to resolve `login.html`, throwing HTTP 500.
+- **Solution 2**:
+  1. Instantiated Flask with explicit absolute paths: `app = Flask(__name__, template_folder=os.path.join(BASE_PATH, 'templates'), static_folder=os.path.join(BASE_PATH, 'static'))`.
+  2. Implemented graceful inline HTML login fallback in `/login` route handler so login authentication never crashes with HTTP 500.
 
 ---
 

@@ -219,7 +219,17 @@ def index():
         
     bond_source = get_bond_yield_source()
     default_date = str(get_default_date())
-    return render_template("index.html", bond_yield_default=bond_yield_pct, bond_yield_source=bond_source, default_date=default_date)
+    try:
+        return render_template("index.html", bond_yield_default=bond_yield_pct, bond_yield_source=bond_source, default_date=default_date)
+    except Exception as e:
+        logger.error(f"Error rendering index.html via Jinjaloader: {e}")
+        index_file_path = os.path.join(template_dir, "index.html")
+        if os.path.exists(index_file_path):
+            with open(index_file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            from flask import render_template_string
+            return render_template_string(content, bond_yield_default=bond_yield_pct, bond_yield_source=bond_source, default_date=default_date)
+        raise e
 
 
 @app.route("/api/valuate", methods=["POST"])
