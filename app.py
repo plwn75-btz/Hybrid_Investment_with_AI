@@ -62,6 +62,45 @@ app.register_blueprint(screening_bp)
 app.secret_key = os.environ.get("SECRET_KEY", "btzi-intrinsic-valuation-2024")
 app.permanent_session_lifetime = timedelta(hours=1)
 
+def locate_template_file(template_name):
+    """
+    Recursively locate template_name in project directory to ensure robust template
+    loading regardless of subfolder structure or working directory on Render.com containers.
+    """
+    candidates = [
+        os.path.join(template_dir, template_name),
+        os.path.join(BASE_PATH, 'templates', template_name),
+        os.path.join(os.getcwd(), 'templates', template_name),
+        os.path.join(os.getcwd(), '3_AI_Selection', 'templates', template_name),
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+
+    for search_root in [BASE_PATH, os.getcwd(), os.path.dirname(BASE_PATH)]:
+        if search_root and os.path.exists(search_root):
+            for root, dirs, files in os.walk(search_root):
+                for f in files:
+                    if f.lower() == template_name.lower():
+                        return os.path.join(root, f)
+    return None
+
+def safe_render_template(template_name, **context):
+    """
+    Renders template with Jinja render_template first, falling back to recursive
+    file locator + render_template_string if Jinja loader encounters a path issue.
+    """
+    try:
+        return render_template(template_name, **context)
+    except Exception as e:
+        found_path = locate_template_file(template_name)
+        if found_path and os.path.exists(found_path):
+            with open(found_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            from flask import render_template_string
+            return render_template_string(content, **context)
+        raise e
+
 @app.errorhandler(500)
 def handle_internal_server_error(e):
     return "Internal Server Error. Please contact admin or try again later.", 500
@@ -77,41 +116,7 @@ def login():
             return redirect(next_url)
         else:
             error = "Invalid password. Please try again."
-    try:
-        return render_template("login.html", error=error)
-    except Exception as e:
-        err_msg = f'<div style="color:#ef4444;margin-top:10px;font-size:0.85rem;">{error}</div>' if error else ''
-        return f'''
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Login - Hybrid Investment</title>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-            <style>
-                body {{ font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
-                .login-card {{ background: #1e293b; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); width: 100%; max-width: 400px; text-align: center; }}
-                h1 {{ font-weight: 600; margin-bottom: 0.5rem; color: #fff; }}
-                p {{ color: #94a3b8; margin-bottom: 2rem; font-size: 0.9rem; }}
-                input {{ width: 100%; padding: 0.8rem; margin-bottom: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155; background: #0f172a; color: #fff; box-sizing: border-box; font-size: 1rem; }}
-                button {{ width: 100%; padding: 0.8rem; border-radius: 0.5rem; border: none; background: #6366f1; color: #fff; font-weight: 600; cursor: pointer; }}
-                button:hover {{ opacity: 0.9; }}
-            </style>
-        </head>
-        <body>
-            <div class="login-card">
-                <h1>Welcome Back</h1>
-                <p>Please enter the access password</p>
-                <form method="POST">
-                    <input type="password" name="password" placeholder="Password" required autofocus>
-                    <button type="submit">Unlock System</button>
-                </form>
-                {err_msg}
-            </div>
-        </body>
-        </html>
-        '''
+    return safe_render_template("login.html", error=error)
 
 @app.route("/logout")
 def logout():
@@ -219,17 +224,7 @@ def index():
         
     bond_source = get_bond_yield_source()
     default_date = str(get_default_date())
-    try:
-        return render_template("index.html", bond_yield_default=bond_yield_pct, bond_yield_source=bond_source, default_date=default_date)
-    except Exception as e:
-        logger.error(f"Error rendering index.html via Jinjaloader: {e}")
-        index_file_path = os.path.join(template_dir, "index.html")
-        if os.path.exists(index_file_path):
-            with open(index_file_path, "r", encoding="utf-8") as f:
-                content = f.read()
-            from flask import render_template_string
-            return render_template_string(content, bond_yield_default=bond_yield_pct, bond_yield_source=bond_source, default_date=default_date)
-        raise e
+    return safe_render_template("index.html", bond_yield_default=bond_yield_pct, bond_yield_source=bond_source, default_date=default_date)
 
 
 @app.route("/api/valuate", methods=["POST"])
