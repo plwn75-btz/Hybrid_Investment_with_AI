@@ -1,0 +1,53 @@
+==============================================================================
+  WHY DID "git status" RETURN "fatal: not a git repository"?
+==============================================================================
+This error means that Git has not been initialized in this local folder yet
+(there is no hidden `.git` folder in `2_Cloud_Hosting` or `STOCK_FACTSHEET`).
+
+Choose ONE of the two options below to upload your files to GitHub:
+
+
+------------------------------------------------------------------------------
+METHOD 1: Drag & Drop via GitHub Web Interface (EASIEST)
+------------------------------------------------------------------------------
+1. Open your browser and go to your GitHub repository:
+   (e.g., https://github.com/YOUR-USERNAME/YOUR-REPO)
+
+2. Navigate into the folder for your project (e.g., `2_Cloud_Hosting` or root).
+
+3. Click "Add file" (top right of the file list) -> Select "Upload files".
+
+4. Drag and drop ONLY these 2 updated files from your computer:
+   - data_fetcher.py
+   - requirements.txt
+
+5. Scroll down, type a commit message (e.g. "Fix yfinance cloud IP blocking"),
+   and click "Commit changes".
+
+6. Render.com will automatically detect the commit and update your live website!
+
+
+------------------------------------------------------------------------------
+METHOD 2: Initialize Git CLI locally (If using PowerShell/Terminal)
+------------------------------------------------------------------------------
+Run these commands in PowerShell inside:
+C:\Users\pipes\OneDrive\Documents\Google_AntiGravity\Project\STOCK_FACTSHEET\Hybrid Investment\2_Cloud_Hosting
+
+1. Initialize Git in this folder:
+   git init
+
+2. Link to your GitHub Repository (replace URL with your real repo link):
+   git remote add origin https://github.com/YOUR-USERNAME/YOUR-REPO.git
+
+3. Set default branch to main:
+   git branch -M main
+
+4. Stage the updated files:
+   git add data_fetcher.py requirements.txt
+
+5. Commit changes:
+   git commit -m "Fix yfinance cloud IP blocking"
+
+6. Push to GitHub:
+   git push -u origin main
+==============================================================================

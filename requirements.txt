@@ -1,0 +1,15 @@
+flask>=3.0
+yfinance>=0.2.38
+requests>=2.31
+selenium>=4.15
+beautifulsoup4>=4.12
+pandas
+ta
+certifi
+gunicorn
+lxml
+numpy
+requests-cache
+requests-ratelimiter
+pyrate-limiter
+curl_cffi>=0.5.10
