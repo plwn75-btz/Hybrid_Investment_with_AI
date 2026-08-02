@@ -54,8 +54,10 @@ BASE_PATH = get_base_path()
 
 from datetime import timedelta
 
-# Setup Flask - using defaults is more robust for Cloud deployments
-app = Flask(__name__)
+# Setup Flask with explicit template and static paths for Cloud & Local robustness
+template_dir = os.path.join(BASE_PATH, 'templates')
+static_dir = os.path.join(BASE_PATH, 'static')
+app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.register_blueprint(screening_bp)
 app.secret_key = os.environ.get("SECRET_KEY", "btzi-intrinsic-valuation-2024")
 app.permanent_session_lifetime = timedelta(hours=1)
@@ -71,10 +73,45 @@ def login():
         if request.form.get("password") == APP_PASSWORD:
             session.permanent = True
             session["logged_in"] = True
-            return redirect(url_for("index"))
+            next_url = request.args.get("next") or url_for("index")
+            return redirect(next_url)
         else:
             error = "Invalid password. Please try again."
-    return render_template("login.html", error=error)
+    try:
+        return render_template("login.html", error=error)
+    except Exception as e:
+        err_msg = f'<div style="color:#ef4444;margin-top:10px;font-size:0.85rem;">{error}</div>' if error else ''
+        return f'''
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Login - Hybrid Investment</title>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+            <style>
+                body {{ font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
+                .login-card {{ background: #1e293b; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); width: 100%; max-width: 400px; text-align: center; }}
+                h1 {{ font-weight: 600; margin-bottom: 0.5rem; color: #fff; }}
+                p {{ color: #94a3b8; margin-bottom: 2rem; font-size: 0.9rem; }}
+                input {{ width: 100%; padding: 0.8rem; margin-bottom: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155; background: #0f172a; color: #fff; box-sizing: border-box; font-size: 1rem; }}
+                button {{ width: 100%; padding: 0.8rem; border-radius: 0.5rem; border: none; background: #6366f1; color: #fff; font-weight: 600; cursor: pointer; }}
+                button:hover {{ opacity: 0.9; }}
+            </style>
+        </head>
+        <body>
+            <div class="login-card">
+                <h1>Welcome Back</h1>
+                <p>Please enter the access password</p>
+                <form method="POST">
+                    <input type="password" name="password" placeholder="Password" required autofocus>
+                    <button type="submit">Unlock System</button>
+                </form>
+                {err_msg}
+            </div>
+        </body>
+        </html>
+        '''
 
 @app.route("/logout")
 def logout():
