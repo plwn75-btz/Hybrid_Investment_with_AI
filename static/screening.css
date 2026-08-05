@@ -314,3 +314,151 @@ table.data-table tbody tr.active-row {
   background: rgba(99,102,241,.15) !important;
   outline: 1px solid var(--accent);
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   AI TOP 10 TAB — Styles
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* AI tab layout */
+#tab-ai-ranking { padding: 20px; }
+
+/* Weight Control Panel */
+.ai-weight-panel {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(12px);
+}
+.ai-weight-panel h3 { font-size:.9rem; font-weight:600; color:var(--text-dim); margin-bottom:14px; letter-spacing:.06em; }
+.ai-weight-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
+.ai-weight-row { display:flex; flex-direction:column; gap:4px; }
+.ai-weight-row label { font-size:.78rem; color:var(--text-dim); }
+.ai-weight-row input[type=range] { width:100%; accent-color:var(--accent); cursor:pointer; }
+.ai-weight-val { font-size:.9rem; font-weight:700; color:var(--accent2); }
+.ai-weight-total-row { margin-top:12px; font-size:.85rem; color:var(--text-dim); }
+.ai-weight-total-row #aiWeightTotal { font-weight:700; }
+
+/* AI Run Buttons */
+.ai-run-buttons { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+.btn-ai-run {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:10px 20px; border-radius:8px; border:none; cursor:pointer;
+  font-weight:600; font-size:.88rem; font-family:inherit;
+  transition:all .2s; letter-spacing:.02em;
+}
+.btn-ai-set50  { background:linear-gradient(135deg,#6366f1,#818cf8); color:#fff; }
+.btn-ai-set100 { background:linear-gradient(135deg,#059669,#10b981); color:#fff; }
+.btn-ai-all    { background:linear-gradient(135deg,#d97706,#f59e0b); color:#fff; }
+.btn-ai-run:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.35); }
+.btn-ai-run:disabled { opacity:.55; cursor:not-allowed; }
+
+/* Progress Section */
+.ai-progress-section { margin-bottom:20px; display:none; }
+.ai-progress-header { display:flex; justify-content:space-between; margin-bottom:6px; font-size:.82rem; color:var(--text-dim); }
+.ai-progress-track { height:8px; background:var(--surface); border-radius:4px; overflow:hidden; }
+.ai-progress-fill { height:100%; background:linear-gradient(90deg,#6366f1,#a855f7); border-radius:4px; transition:width .4s ease; }
+.ai-progress-msg { font-size:.8rem; color:var(--text-dim); margin-top:6px; }
+
+/* Results Header */
+.ai-results-header { margin-bottom:18px; }
+.ai-results-title { font-size:1.2rem; font-weight:700; color:var(--text); margin-bottom:8px; }
+.ai-weight-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+.ai-chip { padding:3px 10px; border-radius:20px; font-size:.74rem; font-weight:600; }
+.ai-chip.tech  { background:rgba(99,102,241,.2);  color:#818cf8; }
+.ai-chip.fund  { background:rgba(34,197,94,.2);   color:#22c55e; }
+.ai-chip.mom   { background:rgba(245,158,11,.2);  color:#f59e0b; }
+.ai-chip.news  { background:rgba(6,182,212,.2);   color:#06b6d4; }
+.ai-chip.div   { background:rgba(236,72,153,.2);  color:#ec4899; }
+.ai-meta { font-size:.78rem; color:var(--text-dim); }
+
+/* Cards Grid */
+.ai-cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:18px; }
+
+/* Individual Card */
+.ai-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  backdrop-filter: blur(14px);
+  transition: transform .2s, box-shadow .2s;
+  display:flex; flex-direction:column; gap:10px;
+}
+.ai-card:hover { transform:translateY(-3px); box-shadow:0 12px 30px rgba(0,0,0,.4); }
+
+.ai-card-header { display:flex; align-items:center; gap:10px; }
+.ai-rank-badge {
+  background:linear-gradient(135deg,#6366f1,#a855f7);
+  color:#fff; font-weight:800; font-size:.85rem;
+  width:32px; height:32px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.ai-card-symbol { font-size:1.3rem; font-weight:800; color:#fff; flex:1; }
+.ai-grade { font-size:1rem; font-weight:800; padding:3px 10px; border-radius:6px; }
+.grade-aplus  { background:rgba(34,197,94,.2);  color:#22c55e; }
+.grade-a      { background:rgba(99,102,241,.2); color:#818cf8; }
+.grade-aminus { background:rgba(6,182,212,.2);  color:#06b6d4; }
+.grade-bplus  { background:rgba(234,179,8,.2);  color:#eab308; }
+.grade-b      { background:rgba(148,163,184,.15); color:#94a3b8; }
+
+.ai-card-sector { font-size:.78rem; color:var(--text-dim); }
+.ai-card-tags { display:flex; flex-wrap:wrap; gap:5px; }
+
+/* Badges */
+.badge { padding:2px 8px; border-radius:12px; font-size:.72rem; font-weight:600; }
+.badge-green  { background:rgba(34,197,94,.15);  color:#22c55e; }
+.badge-red    { background:rgba(239,68,68,.15);  color:#ef4444; }
+.badge-blue   { background:rgba(99,102,241,.15); color:#818cf8; }
+.badge-orange { background:rgba(249,115,22,.15); color:#fb923c; }
+
+/* Fair Value Note */
+.ai-fv-note { font-size:.74rem; color:var(--accent2); background:rgba(99,102,241,.08); padding:4px 8px; border-radius:6px; }
+
+/* Metrics row */
+.ai-card-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.ai-metric { background:var(--surface); border-radius:6px; padding:7px 8px; text-align:center; }
+.ai-metric-label { font-size:.68rem; color:var(--text-dim); display:block; margin-bottom:2px; }
+.ai-metric-value { font-size:.9rem; font-weight:700; color:var(--text); }
+.ai-div-yield { color:#ec4899; }
+
+/* Score Bars */
+.ai-score-bars { display:flex; flex-direction:column; gap:5px; }
+.ai-score-bar-row { display:flex; align-items:center; gap:8px; }
+.ai-score-bar-label { font-size:.72rem; color:var(--text-dim); width:80px; flex-shrink:0; }
+.ai-score-bar-track { flex:1; height:6px; background:var(--surface); border-radius:3px; overflow:hidden; }
+.ai-score-bar-fill { height:100%; border-radius:3px; transition:width .5s ease; }
+.ai-score-bar-val { font-size:.72rem; font-weight:600; color:var(--text); width:34px; text-align:right; flex-shrink:0; }
+
+/* Thesis & Risks */
+.ai-thesis, .ai-risks { background:var(--surface); border-radius:8px; padding:10px 12px; font-size:.78rem; }
+.ai-thesis-label, .ai-risks-label { font-weight:700; color:var(--text-dim); margin-bottom:4px; font-size:.72rem; letter-spacing:.04em; }
+.ai-thesis-text { color:var(--text); line-height:1.5; }
+.ai-risks-text  { color:#fbbf24; line-height:1.5; }
+
+/* Card Actions */
+.ai-card-actions { display:flex; gap:8px; margin-top:4px; }
+.btn-shortlist-ai, .btn-view-ai {
+  flex:1; padding:7px; border-radius:7px; border:none; cursor:pointer;
+  font-weight:600; font-size:.8rem; font-family:inherit; transition:all .2s;
+}
+.btn-shortlist-ai { background:rgba(99,102,241,.2); color:#818cf8; }
+.btn-view-ai      { background:rgba(34,197,94,.15); color:#22c55e; }
+.btn-shortlist-ai:hover { background:rgba(99,102,241,.4); }
+.btn-view-ai:hover      { background:rgba(34,197,94,.3); }
+
+/* Empty / Error states */
+.ai-empty { text-align:center; padding:60px 20px; color:var(--text-dim); font-size:.9rem; }
+.ai-error  { text-align:center; padding:40px 20px; color:#ef4444; font-size:.9rem; }
+
+/* ── Scoring Principles Tab ─────────────────────────────────────────── */
+#tab-scoring { padding:20px; }
+.scoring-section { margin-bottom:28px; }
+.scoring-section h3 { font-size:1rem; font-weight:700; color:var(--accent2); margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:6px; }
+.scoring-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+.scoring-table th { background:var(--surface); color:var(--text-dim); padding:8px 12px; text-align:left; font-weight:600; }
+.scoring-table td { padding:7px 12px; border-bottom:1px solid var(--border); color:var(--text); }
+.scoring-table tr:hover td { background:rgba(255,255,255,.03); }
+.pts-badge { font-weight:700; color:#22c55e; }
+.pts-neg   { font-weight:700; color:#ef4444; }

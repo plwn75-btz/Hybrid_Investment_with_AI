@@ -36,6 +36,8 @@
     <button class="tab-btn" data-tab="news">NEWS</button>
     <button class="tab-btn" data-tab="technical">TECHNICAL CHART</button>
     <button class="tab-btn" data-tab="shortlist">SHORT LIST</button>
+    <button class="tab-btn ai-tab-btn" data-tab="ai-ranking">🤖 AI TOP 10</button>
+    <button class="tab-btn" data-tab="scoring">📖 SCORING</button>
   </div>
 
   <!-- ===================================================== TAB: SCREENING -->
@@ -689,6 +691,168 @@
 
 </div><!-- end app-wrapper -->
 
+<!-- ===================================================== TAB: AI TOP 10 RANKING -->
+<div id="tab-ai-ranking" class="tab-content" style="display:none;">
+
+  <!-- Weight Control Panel -->
+  <div class="ai-weight-panel">
+    <h3>⚖️ SCORING WEIGHTS</h3>
+    <div class="ai-weight-grid">
+
+      <div class="ai-weight-row">
+        <label>🔵 Technical</label>
+        <input type="range" id="aiWeight_tech" min="0" max="100" value="30">
+        <span class="ai-weight-val" id="aiWeightVal_tech">30%</span>
+      </div>
+
+      <div class="ai-weight-row">
+        <label>🟢 Fundamental</label>
+        <input type="range" id="aiWeight_fund" min="0" max="100" value="40">
+        <span class="ai-weight-val" id="aiWeightVal_fund">40%</span>
+      </div>
+
+      <div class="ai-weight-row">
+        <label>🟡 Momentum</label>
+        <input type="range" id="aiWeight_mom" min="0" max="100" value="15">
+        <span class="ai-weight-val" id="aiWeightVal_mom">15%</span>
+      </div>
+
+      <div class="ai-weight-row">
+        <label>🔵 News Sentiment</label>
+        <input type="range" id="aiWeight_news" min="0" max="100" value="5">
+        <span class="ai-weight-val" id="aiWeightVal_news">5%</span>
+      </div>
+
+      <div class="ai-weight-row">
+        <label>🩷 Dividend Profit</label>
+        <input type="range" id="aiWeight_div" min="0" max="100" value="10">
+        <span class="ai-weight-val" id="aiWeightVal_div">10%</span>
+      </div>
+
+    </div>
+    <div class="ai-weight-total-row">Total: <span id="aiWeightTotal">100%</span> &nbsp;<small>(must equal 100% for best results)</small></div>
+  </div>
+
+  <!-- AI Run Buttons -->
+  <div class="ai-run-buttons">
+    <button id="btnRunSet50Ranking" class="btn-ai-run btn-ai-set50">🎯 Run AI — SET50</button>
+    <button id="btnRunSet100Ranking" class="btn-ai-run btn-ai-set100">🏆 Run AI — SET100</button>
+    <button id="btnRunAiRanking" class="btn-ai-run btn-ai-all">⚡ Run AI — Full SET</button>
+  </div>
+
+  <!-- Progress -->
+  <div class="ai-progress-section" id="aiProgressSection">
+    <div class="ai-progress-header">
+      <span id="aiProgressStage">Stage 1/5</span>
+      <span id="aiProgressPct">0%</span>
+    </div>
+    <div class="ai-progress-track">
+      <div class="ai-progress-fill" id="aiProgressBar" style="width:0%"></div>
+    </div>
+    <div class="ai-progress-msg" id="aiProgressText">Initializing…</div>
+  </div>
+
+  <!-- Results -->
+  <div id="aiRankingResults"></div>
+
+</div><!-- end tab-ai-ranking -->
+
+
+<!-- ===================================================== TAB: SCORING PRINCIPLES -->
+<div id="tab-scoring" class="tab-content" style="display:none;">
+  <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:20px;color:#818cf8;">📖 AI SCORING PRINCIPLES REFERENCE</h2>
+
+  <!-- Technical -->
+  <div class="scoring-section">
+    <h3>🔵 Technical Score (Default 30%)</h3>
+    <table class="scoring-table">
+      <thead><tr><th>Criteria</th><th>Condition</th><th>Points</th></tr></thead>
+      <tbody>
+        <tr><td>Criteria Bonus</td><td>6/6 criteria passed</td><td class="pts-badge">+30 pts</td></tr>
+        <tr><td>Criteria Bonus</td><td>5/6 criteria passed</td><td class="pts-badge">+20 pts</td></tr>
+        <tr><td>Criteria Bonus</td><td>4/6 criteria passed</td><td class="pts-badge">+10 pts</td></tr>
+        <tr><td>RSI</td><td>RSI ≤ 35 (Oversold)</td><td class="pts-badge">+15 pts</td></tr>
+        <tr><td>RSI</td><td>RSI ≤ 45</td><td class="pts-badge">+10 pts</td></tr>
+        <tr><td>RSI</td><td>RSI ≥ 70 (Overbought)</td><td class="pts-neg">−10 pts</td></tr>
+        <tr><td>Stochastic</td><td>Stoch ≤ 30</td><td class="pts-badge">+10 pts</td></tr>
+        <tr><td>Stochastic</td><td>Stoch ≥ 80</td><td class="pts-neg">−5 pts</td></tr>
+        <tr><td>Trend</td><td>Price ≥ EMA200</td><td class="pts-badge">+5 pts</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Fundamental -->
+  <div class="scoring-section">
+    <h3>🟢 Fundamental Score — Buffett &amp; Lynch Model (Default 40%)</h3>
+    <table class="scoring-table">
+      <thead><tr><th>Pillar</th><th>Condition</th><th>Points</th></tr></thead>
+      <tbody>
+        <tr><td>1. Margin of Safety</td><td>MOS ≥ 30%</td><td class="pts-badge">+30 pts</td></tr>
+        <tr><td>1. Margin of Safety</td><td>MOS ≥ 15%</td><td class="pts-badge">+20 pts</td></tr>
+        <tr><td>1. Margin of Safety</td><td>MOS ≥ 0%</td><td class="pts-badge">+10 pts</td></tr>
+        <tr><td>1. Margin of Safety</td><td>MOS &lt; −20%</td><td class="pts-neg">−15 pts</td></tr>
+        <tr><td>2. Capital Efficiency (ROE)</td><td>ROE ≥ 20% &amp; Net Margin ≥ 12%</td><td class="pts-badge">+25 pts</td></tr>
+        <tr><td>2. Capital Efficiency (ROE)</td><td>ROE ≥ 15%</td><td class="pts-badge">+18 pts</td></tr>
+        <tr><td>3. GARP / PEG</td><td>PEG ≤ 0.5</td><td class="pts-badge">+20 pts</td></tr>
+        <tr><td>3. GARP / PEG</td><td>PEG ≤ 0.8</td><td class="pts-badge">+15 pts</td></tr>
+        <tr><td>4. Balance Sheet</td><td>D/E &lt; 0.5</td><td class="pts-badge">+15 pts</td></tr>
+        <tr><td>4. Balance Sheet</td><td>D/E ≤ 1.0</td><td class="pts-badge">+10 pts</td></tr>
+        <tr><td>4. Balance Sheet</td><td>D/E &gt; 2.0</td><td class="pts-neg">−10 pts</td></tr>
+        <tr><td>5. Shareholder Yield</td><td>Div Yield ≥ 4% + Positive FCF</td><td class="pts-badge">+10 pts</td></tr>
+        <tr><td>5. Shareholder Yield</td><td>Div Yield ≥ 2%</td><td class="pts-badge">+6 pts</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Momentum -->
+  <div class="scoring-section">
+    <h3>🟡 Momentum Score (Default 15%)</h3>
+    <table class="scoring-table">
+      <thead><tr><th>Criteria</th><th>Condition</th><th>Points</th></tr></thead>
+      <tbody>
+        <tr><td>Volume Spike</td><td>Sudden volume surge detected</td><td class="pts-badge">+25 pts</td></tr>
+        <tr><td>RVOL</td><td>Relative Volume ≥ 1.5×</td><td class="pts-badge">+15 pts</td></tr>
+        <tr><td>RVOL</td><td>Relative Volume ≥ 1.2×</td><td class="pts-badge">+10 pts</td></tr>
+        <tr><td>Price Action</td><td>Daily Change &gt; 0%</td><td class="pts-badge">+10 pts</td></tr>
+        <tr><td>Price Action</td><td>Daily Change &lt; −3%</td><td class="pts-neg">−10 pts</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- News -->
+  <div class="scoring-section">
+    <h3>🔵 News Sentiment Score (Default 5%)</h3>
+    <table class="scoring-table">
+      <thead><tr><th>Signal</th><th>Keywords</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td>Positive</td><td>growth, profit, dividend, record, gain, surge, กำไร, เติบโต, ปันผล</td><td class="pts-badge">+5 pts each</td></tr>
+        <tr><td>Negative</td><td>loss, drop, fall, decline, risk, lawsuit, debt, ขาดทุน, ลดลง, เสี่ยง</td><td class="pts-neg">−5 pts each</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Dividend -->
+  <div class="scoring-section">
+    <h3>🩷 Dividend Profit Score (Default 10%)</h3>
+    <table class="scoring-table">
+      <thead><tr><th>Pillar</th><th>Condition</th><th>Points</th></tr></thead>
+      <tbody>
+        <tr><td>A. Dividend Yield</td><td>Yield ≥ 6%</td><td class="pts-badge">+40 pts</td></tr>
+        <tr><td>A. Dividend Yield</td><td>Yield ≥ 4%</td><td class="pts-badge">+30 pts</td></tr>
+        <tr><td>A. Dividend Yield</td><td>Yield ≥ 2.5%</td><td class="pts-badge">+18 pts</td></tr>
+        <tr><td>A. Dividend Yield</td><td>Yield ≥ 1%</td><td class="pts-badge">+8 pts</td></tr>
+        <tr><td>A. Dividend Yield</td><td>No dividend paid</td><td class="pts-neg">−10 pts</td></tr>
+        <tr><td>B. FCF Sustainability</td><td>Positive Free Cash Flow</td><td class="pts-badge">+20 pts</td></tr>
+        <tr><td>B. FCF Sustainability</td><td>Negative Free Cash Flow</td><td class="pts-neg">−10 pts</td></tr>
+        <tr><td>C. Payout Ratio (DPS/EPS)</td><td>20% – 60% (Healthy)</td><td class="pts-badge">+20 pts</td></tr>
+        <tr><td>C. Payout Ratio</td><td>≤ 80% (Acceptable)</td><td class="pts-badge">+10 pts</td></tr>
+        <tr><td>C. Payout Ratio</td><td>&gt; 100% (Unsustainable)</td><td class="pts-neg">−15 pts</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- end tab-scoring -->
+
 <!-- LOADING OVERLAY -->
 <div id="loadingOverlay" class="loading-overlay hidden">
   <div class="loading-spinner"></div>
@@ -697,5 +861,6 @@
 
 <script src="/static/screening.js"></script>
 <script src="/static/app.js"></script>
+<script src="/static/ai_ranking.js"></script>
 </body>
 </html>

@@ -107,10 +107,11 @@ def start_ai_ranking():
 
     data = request.get_json() or {}
     weights = {
-        'weight_tech': float(data.get('weight_tech', 0.40)),
+        'weight_tech': float(data.get('weight_tech', 0.30)),
         'weight_fund': float(data.get('weight_fund', 0.40)),
         'weight_mom': float(data.get('weight_mom', 0.15)),
-        'weight_news': float(data.get('weight_news', 0.05))
+        'weight_news': float(data.get('weight_news', 0.05)),
+        'weight_div':  float(data.get('weight_div',  0.10))
     }
     date_str = data.get('date', str(get_default_date()))
     rsi = int(data.get('rsi', 30))

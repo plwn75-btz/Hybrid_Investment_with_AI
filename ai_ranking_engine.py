@@ -33,12 +33,13 @@ from news_fetcher import get_all_news
 
 logger = logging.getLogger(__name__)
 
-# System default scoring weights (40% Tech / 40% Fund / 15% Mom / 5% News)
+# System default scoring weights (30% Tech / 40% Fund / 15% Mom / 5% News / 10% Dividend)
 DEFAULT_WEIGHTS = {
-    "weight_tech": 0.40,
+    "weight_tech": 0.30,
     "weight_fund": 0.40,
     "weight_mom": 0.15,
-    "weight_news": 0.05
+    "weight_news": 0.05,
+    "weight_div":  0.10
 }
 
 CANDIDATE_CAP = 25  # Default candidate cap if process_all=False
@@ -306,6 +307,56 @@ def compute_momentum_score(mom_data):
     return float(np.clip(score, 0, 100))
 
 
+def compute_dividend_score(fund_data):
+    """
+    Score 0-100 based on dividend yield, payout sustainability, and DPS vs EPS ratio.
+    Rewards consistent, high-yield dividends backed by positive free cash flow.
+    """
+    score = 40.0  # Base score (neutral)
+    try:
+        div_yield = safe_float(fund_data.get('div_yield', 0))
+        if 0 < div_yield < 1.0:
+            div_yield = div_yield * 100.0  # Convert decimal to pct
+
+        fcf = safe_float(fund_data.get('fcf', 0))
+        dps = safe_float(fund_data.get('dps', 0))
+        eps = safe_float(fund_data.get('eps', 0))
+        pe  = safe_float(fund_data.get('pe', 0))
+
+        # Pillar A: Dividend Yield (Max +40 pts)
+        if div_yield >= 6.0:
+            score += 40.0   # Exceptional yield
+        elif div_yield >= 4.0:
+            score += 30.0   # High yield
+        elif div_yield >= 2.5:
+            score += 18.0   # Moderate yield
+        elif div_yield >= 1.0:
+            score += 8.0    # Low yield
+        elif div_yield == 0:
+            score -= 10.0   # No dividend penalty
+
+        # Pillar B: Payout Sustainability — FCF covers dividend (Max +20 pts)
+        if fcf > 0:
+            score += 20.0   # Dividend backed by positive free cash flow
+        elif fcf < 0:
+            score -= 10.0   # Negative FCF: dividend may be at risk
+
+        # Pillar C: DPS vs EPS ratio — payout ratio health (Max +20 pts)
+        if eps > 0 and dps > 0:
+            payout_ratio = (dps / eps) * 100.0
+            if 20 <= payout_ratio <= 60:
+                score += 20.0   # Healthy payout — room to grow
+            elif payout_ratio <= 80:
+                score += 10.0   # Acceptable payout
+            elif payout_ratio > 100:
+                score -= 15.0   # Paying more than earned — unsustainable
+
+    except Exception as e:
+        logger.warning(f"Error computing dividend score: {e}")
+
+    return float(np.clip(score, 0, 100))
+
+
 def compute_news_score(news_items):
     """
     Score 0-100 based on headline sentiment analysis.
@@ -399,22 +450,24 @@ def run_ai_stock_selection(weights=None, date_str=None, rsi=30, stoch=70, min_cr
     if weights is None:
         weights = DEFAULT_WEIGHTS
 
-    w_tech = safe_float(weights.get("weight_tech", 0.40))
+    w_tech = safe_float(weights.get("weight_tech", 0.30))
     w_fund = safe_float(weights.get("weight_fund", 0.40))
     w_mom  = safe_float(weights.get("weight_mom", 0.15))
     w_news = safe_float(weights.get("weight_news", 0.05))
+    w_div  = safe_float(weights.get("weight_div",  0.10))
 
     # Support backwards compatibility for set50_only
     if set50_only and index_filter == "all":
         index_filter = "set50"
 
     # Normalize weights so sum = 1.0
-    total_w = w_tech + w_fund + w_mom + w_news
+    total_w = w_tech + w_fund + w_mom + w_news + w_div
     if total_w > 0:
         w_tech /= total_w
         w_fund /= total_w
-        w_mom /= total_w
+        w_mom  /= total_w
         w_news /= total_w
+        w_div  /= total_w
 
     if date_str is None:
         date_str = str(get_default_date())
@@ -504,9 +557,14 @@ def run_ai_stock_selection(weights=None, date_str=None, rsi=30, stoch=70, min_cr
             'debt_to_equity': val_res.get('debt_to_equity', 0),
             'div_yield': val_res.get('div_yield', 0),
             'net_margin': val_res.get('net_margin', 0),
-            'fcf': val_res.get('fcf', 0)
+            'fcf': val_res.get('fcf', 0),
+            'dps': yf_raw.get('dps', 0),
+            'eps': yf_raw.get('eps', 0)
         }
         fund_score = compute_fundamental_score(fund_info)
+
+        # Dividend Score (standalone pillar)
+        div_score = compute_dividend_score(fund_info)
 
         # Momentum
         mom_data = get_momentum_data(sym)
@@ -516,8 +574,8 @@ def run_ai_stock_selection(weights=None, date_str=None, rsi=30, stoch=70, min_cr
         news_items = get_all_news(sym)
         news_score = compute_news_score(news_items)
 
-        # Composite Weighted Score (40% Tech / 40% Fund / 15% Mom / 5% News)
-        composite_score = (w_tech * tech_score) + (w_fund * fund_score) + (w_mom * mom_score) + (w_news * news_score)
+        # Composite Weighted Score (30% Tech / 40% Fund / 15% Mom / 5% News / 10% Div)
+        composite_score = (w_tech * tech_score) + (w_fund * fund_score) + (w_mom * mom_score) + (w_news * news_score) + (w_div * div_score)
 
         candidate_dataset.append({
             'symbol': sym,
@@ -526,6 +584,7 @@ def run_ai_stock_selection(weights=None, date_str=None, rsi=30, stoch=70, min_cr
             'fair_value': fair_val,
             'fair_value_method_note': fv_method_note,
             'mos_pct': mos_pct,
+            'div_yield': fund_info.get('div_yield', 0),
             'pe': fund_info['pe'],
             'pbv': fund_info['pbv'],
             'criteria_passed': row.get('criteria_passed', 4),
@@ -533,6 +592,7 @@ def run_ai_stock_selection(weights=None, date_str=None, rsi=30, stoch=70, min_cr
             'fund_score': round(fund_score, 1),
             'mom_score': round(mom_score, 1),
             'news_score': round(news_score, 1),
+            'div_score': round(div_score, 1),
             'composite_score': round(composite_score, 1),
             'recent_news_count': len(news_items),
             'rvol': mom_data.get('rvol', 1.0),
@@ -583,6 +643,7 @@ def run_ai_stock_selection(weights=None, date_str=None, rsi=30, stoch=70, min_cr
             "fair_value": item['fair_value'],
             "fair_value_method_note": item['fair_value_method_note'],
             "mos_pct": item['mos_pct'],
+            "div_yield": item.get('div_yield', 0),
             "pe": item['pe'],
             "pbv": item['pbv'],
             "criteria_passed": item['criteria_passed'],
@@ -591,6 +652,7 @@ def run_ai_stock_selection(weights=None, date_str=None, rsi=30, stoch=70, min_cr
             "fund_score": item['fund_score'],
             "mom_score": item['mom_score'],
             "news_score": item['news_score'],
+            "div_score": item.get('div_score', 50.0),
             "ai_grade": grade,
             "investment_thesis": thesis,
             "key_risks": risks,
@@ -609,7 +671,8 @@ def run_ai_stock_selection(weights=None, date_str=None, rsi=30, stoch=70, min_cr
             "weight_tech": round(w_tech, 2),
             "weight_fund": round(w_fund, 2),
             "weight_mom": round(w_mom, 2),
-            "weight_news": round(w_news, 2)
+            "weight_news": round(w_news, 2),
+            "weight_div": round(w_div, 2)
         },
         "total_screened": len(matched_stocks),
         "total_analyzed": total_candidates,
