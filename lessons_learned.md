@@ -54,10 +54,11 @@
 ### K. Target-Specific Button Loading State & Render.com Preparedness
 - **Issue 1**: Clicking `SET50` or `SET100` buttons previously modified `btnRunAiRanking` ("Run AI Selection from SET") loading text due to shared element targeting.
 - **Solution 1**: Updated `runAiSelection(indexFilter)` in `static/ai_ranking.js` to change `⌛ AI Analyzing…` text strictly on the clicked button (`btnRunSet50Ranking`, `btnRunSet100Ranking`, or `btnRunAiRanking`).
-- **Issue 2 (Render.com `jinja2.exceptions.TemplateNotFound: login.html`)**: When executing inside containerized Gunicorn cloud workers, Flask's default implicit template resolution could fail to resolve `login.html`, throwing HTTP 500.
+- **Issue 2 (Render.com `jinja2.exceptions.TemplateNotFound: login.html`)**: When executing inside containerized Gunicorn cloud workers on Render.com (`/opt/render/project/src`), Flask's default single-directory template loader could fail to locate `login.html` if the relative working directory or template folder structure differed, causing Jinja to raise `TemplateNotFound: login.html` and Flask to return HTTP 500 (`Internal Server Error. Please contact admin or try again later.`).
 - **Solution 2**:
-  1. Instantiated Flask with explicit absolute paths: `app = Flask(__name__, template_folder=os.path.join(BASE_PATH, 'templates'), static_folder=os.path.join(BASE_PATH, 'static'))`.
-  2. Implemented graceful inline HTML login fallback in `/login` route handler so login authentication never crashes with HTTP 500.
+  1. Configured Flask Jinja loader with `jinja2.ChoiceLoader` across multiple candidate template search paths (`template_dir`, `BASE_PATH/templates`, `os.getcwd()/templates`, `/opt/render/project/src/templates`, etc.).
+  2. Updated `locate_template_file()` to recursively search all project directories and container root paths.
+  3. Added an embedded `FALLBACK_LOGIN_HTML` template string in `safe_render_template()` for `login.html`. If the template file is ever missing from disk, Flask gracefully renders the embedded dark-themed login template, completely preventing HTTP 500 errors on cloud deployments.
 
 ---
 

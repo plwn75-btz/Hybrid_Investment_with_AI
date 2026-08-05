@@ -32,6 +32,11 @@ import json
 import os
 import sys
 import requests
+import logging
+
+# Setup logging early so logger is available everywhere including safe_render_template fallback
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
 
 # Security Configuration
 APP_PASSWORD = os.environ.get("APP_PASSWORD", "btz2026") # Default fallback
@@ -54,6 +59,85 @@ BASE_PATH = get_base_path()
 
 from datetime import timedelta
 
+from jinja2 import ChoiceLoader, FileSystemLoader
+
+FALLBACK_LOGIN_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Hybrid Investment</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background: var(--card);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h1 { font-weight: 600; margin-bottom: 0.5rem; color: #fff; }
+        p { color: #94a3b8; margin-bottom: 2rem; font-size: 0.9rem; }
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: #fff;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 0.5rem;
+            border: none;
+            background: var(--primary);
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        .error { color: #ef4444; margin-top: 1rem; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1>Welcome Back</h1>
+        <p>Please enter the access password</p>
+        <form method="POST">
+            <input type="password" name="password" placeholder="Password" required autofocus>
+            <button type="submit">Unlock System</button>
+        </form>
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+    </div>
+</body>
+</html>
+"""
+
 # Setup Flask with explicit template and static paths for Cloud & Local robustness
 template_dir = os.path.join(BASE_PATH, 'templates')
 static_dir = os.path.join(BASE_PATH, 'static')
@@ -61,6 +145,23 @@ app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.register_blueprint(screening_bp)
 app.secret_key = os.environ.get("SECRET_KEY", "btzi-intrinsic-valuation-2024")
 app.permanent_session_lifetime = timedelta(hours=1)
+
+# Configure Jinja ChoiceLoader with multi-directory fallback for cloud environments (Render.com)
+search_dirs = [
+    template_dir,
+    os.path.join(BASE_PATH, 'templates'),
+    os.path.join(os.getcwd(), 'templates'),
+    os.path.join(os.getcwd(), '3_AI_Selection', 'templates'),
+    os.path.join(os.path.dirname(BASE_PATH), 'templates'),
+    os.path.join(os.path.dirname(BASE_PATH), '3_AI_Selection', 'templates'),
+    '/opt/render/project/src/templates',
+    '/opt/render/project/src/3_AI_Selection/templates',
+]
+valid_dirs = [d for d in search_dirs if os.path.exists(d)]
+if not valid_dirs:
+    valid_dirs = [BASE_PATH]
+
+app.jinja_loader = ChoiceLoader([FileSystemLoader(d) for d in valid_dirs])
 
 def locate_template_file(template_name):
     """
@@ -72,12 +173,16 @@ def locate_template_file(template_name):
         os.path.join(BASE_PATH, 'templates', template_name),
         os.path.join(os.getcwd(), 'templates', template_name),
         os.path.join(os.getcwd(), '3_AI_Selection', 'templates', template_name),
+        os.path.join(os.path.dirname(BASE_PATH), 'templates', template_name),
+        os.path.join(os.path.dirname(BASE_PATH), '3_AI_Selection', 'templates', template_name),
+        os.path.join('/opt/render/project/src', 'templates', template_name),
+        os.path.join('/opt/render/project/src', '3_AI_Selection', 'templates', template_name),
     ]
     for c in candidates:
         if os.path.exists(c):
             return c
 
-    for search_root in [BASE_PATH, os.getcwd(), os.path.dirname(BASE_PATH)]:
+    for search_root in [BASE_PATH, os.getcwd(), os.path.dirname(BASE_PATH), '/opt/render/project/src']:
         if search_root and os.path.exists(search_root):
             for root, dirs, files in os.walk(search_root):
                 for f in files:
@@ -88,17 +193,27 @@ def locate_template_file(template_name):
 def safe_render_template(template_name, **context):
     """
     Renders template with Jinja render_template first, falling back to recursive
-    file locator + render_template_string if Jinja loader encounters a path issue.
+    file locator + render_template_string if Jinja loader encounters a path issue,
+    and using inline fallback strings for critical pages like login.html.
     """
+    from flask import render_template_string
     try:
         return render_template(template_name, **context)
     except Exception as e:
+        # Immediate inline fallback for login.html — before any logger calls that could fail
+        if template_name == "login.html":
+            return render_template_string(FALLBACK_LOGIN_HTML, **context)
+
+        logger.warning(f"render_template failed for {template_name} ({e}). Attempting locate_template_file...")
         found_path = locate_template_file(template_name)
         if found_path and os.path.exists(found_path):
-            with open(found_path, "r", encoding="utf-8") as f:
-                content = f.read()
-            from flask import render_template_string
-            return render_template_string(content, **context)
+            try:
+                with open(found_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                return render_template_string(content, **context)
+            except Exception as read_err:
+                logger.error(f"Error reading located template file {found_path}: {read_err}")
+
         raise e
 
 @app.errorhandler(500)
@@ -123,8 +238,7 @@ def logout():
     session.pop("logged_in", None)
     return redirect(url_for("login"))
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-logger = logging.getLogger(__name__)
+# Note: logging and logger are configured at the top of the file (after imports)
 
 # Determine where to save the shortlist (persist in EXE folder, GitHub Gist, or Local)
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
