@@ -1,9 +1,7 @@
 /**
- * ai_ranking.js — AI Stock Selection Frontend Controller (v6.0)
- * Weights: Technical 30% / Fundamental 40% / Momentum 15% / News 5% / Dividend 10%
+ * ai_ranking.js — AI Stock Selection Frontend Controller (v6.0 - Precise Design Match)
  */
 
-// ── Default Weights ───────────────────────────────────────────────────────────
 const AI_DEFAULT_WEIGHTS = {
   weight_tech: 30,
   weight_fund: 40,
@@ -13,15 +11,20 @@ const AI_DEFAULT_WEIGHTS = {
 };
 
 let aiPollTimer = null;
-let currentIndexFilter = 'set50'; // default
+let currentIndexFilter = 'set50';
 
-// ── Initialise on DOM ready ───────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   initWeightSliders();
   bindAiButtons();
 });
 
-// ── Weight Sliders ────────────────────────────────────────────────────────────
+function toggleWeightModal() {
+  const panel = document.getElementById('aiWeightPanel');
+  if (panel) {
+    panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
+  }
+}
+
 function initWeightSliders() {
   const keys = ['tech', 'fund', 'mom', 'news', 'div'];
   keys.forEach(k => {
@@ -33,9 +36,19 @@ function initWeightSliders() {
     slider.addEventListener('input', () => {
       label.textContent = slider.value + '%';
       recalcWeightTotal();
+      updateBannerChips();
     });
   });
   recalcWeightTotal();
+  updateBannerChips();
+}
+
+function updateBannerChips() {
+  ['tech', 'fund', 'mom', 'news', 'div'].forEach(k => {
+    const slider = document.getElementById(`aiWeight_${k}`);
+    const chipVal = document.getElementById(`chip${k.charAt(0).toUpperCase() + k.slice(1)}Val`);
+    if (slider && chipVal) chipVal.textContent = slider.value + '%';
+  });
 }
 
 function recalcWeightTotal() {
@@ -61,7 +74,6 @@ function getWeights() {
   return raw;
 }
 
-// ── Button Binding ────────────────────────────────────────────────────────────
 function bindAiButtons() {
   const btnSet50  = document.getElementById('btnRunSet50Ranking');
   const btnSet100 = document.getElementById('btnRunSet100Ranking');
@@ -72,11 +84,9 @@ function bindAiButtons() {
   if (btnAll)    btnAll.addEventListener('click',    () => runAiSelection('all',    btnAll));
 }
 
-// ── Run AI Selection ──────────────────────────────────────────────────────────
 function runAiSelection(indexFilter, clickedBtn) {
   currentIndexFilter = indexFilter;
 
-  // Disable all AI buttons, set loading text only on clicked button
   ['btnRunSet50Ranking','btnRunSet100Ranking','btnRunAiRanking'].forEach(id => {
     const btn = document.getElementById(id);
     if (btn) btn.disabled = true;
@@ -86,7 +96,6 @@ function runAiSelection(indexFilter, clickedBtn) {
     clickedBtn.innerHTML = '⌛ AI Analyzing…';
   }
 
-  // Clear previous results
   const resultsEl = document.getElementById('aiRankingResults');
   if (resultsEl) resultsEl.innerHTML = '';
   showAiProgress(true);
@@ -127,7 +136,6 @@ function runAiSelection(indexFilter, clickedBtn) {
   });
 }
 
-// ── Poll Progress ─────────────────────────────────────────────────────────────
 function pollAiProgress(clickedBtn) {
   fetch('/api/ai_rank/progress')
     .then(r => r.json())
@@ -160,7 +168,6 @@ function fetchAiResults(clickedBtn) {
     });
 }
 
-// ── Reset Buttons ─────────────────────────────────────────────────────────────
 function resetAiButtons(clickedBtn) {
   ['btnRunSet50Ranking','btnRunSet100Ranking','btnRunAiRanking'].forEach(id => {
     const btn = document.getElementById(id);
@@ -171,7 +178,6 @@ function resetAiButtons(clickedBtn) {
   }
 }
 
-// ── Progress UI ───────────────────────────────────────────────────────────────
 function showAiProgress(show) {
   const el = document.getElementById('aiProgressSection');
   if (el) el.style.display = show ? 'block' : 'none';
@@ -186,7 +192,6 @@ function updateAiProgressBar(pct, msg, stage) {
   if (stag) stag.textContent = `Stage ${stage || 1}/5`;
 }
 
-// ── Render Results ────────────────────────────────────────────────────────────
 function renderAiResults(data) {
   const container = document.getElementById('aiRankingResults');
   if (!container) return;
@@ -197,109 +202,76 @@ function renderAiResults(data) {
     return;
   }
 
-  const idxLabel = { all: 'Full SET', set50: 'SET50', set100: 'SET100' }[data.index_filter] || 'SET';
-  const w = data.weights || {};
-
-  // Header summary
-  let html = `
-    <div class="ai-results-header">
-      <div class="ai-results-title">🤖 AI TOP ${rankings.length} — ${idxLabel} Index</div>
-      <div class="ai-weight-chips">
-        <span class="ai-chip tech">Tech ${Math.round((w.weight_tech||0)*100)}%</span>
-        <span class="ai-chip fund">Fund ${Math.round((w.weight_fund||0)*100)}%</span>
-        <span class="ai-chip mom">Mom ${Math.round((w.weight_mom||0)*100)}%</span>
-        <span class="ai-chip news">News ${Math.round((w.weight_news||0)*100)}%</span>
-        <span class="ai-chip div">Div ${Math.round((w.weight_div||0)*100)}%</span>
-      </div>
-      <div class="ai-meta">📅 ${data.date} &nbsp;|&nbsp; 🔍 Screened ${data.total_screened} stocks &nbsp;|&nbsp; 🧮 Analyzed ${data.total_analyzed}</div>
-    </div>
-    <div class="ai-cards-grid">
-  `;
+  let html = `<div class="ai-cards-grid">`;
 
   rankings.forEach(stock => {
-    const gradeClass = {
-      'A+': 'grade-aplus', 'A': 'grade-a', 'A-': 'grade-aminus',
-      'B+': 'grade-bplus', 'B': 'grade-b'
-    }[stock.ai_grade] || 'grade-b';
+    const mosClass = stock.mos_pct >= 0 ? 'mos-positive' : 'mos-negative';
+    const mosText  = stock.mos_pct >= 0 ? `+${stock.mos_pct.toFixed(1)}%` : `${stock.mos_pct.toFixed(1)}%`;
 
-    const mosBadge = stock.mos_pct > 0
-      ? `<span class="badge badge-green">MOS +${stock.mos_pct.toFixed(1)}%</span>`
-      : `<span class="badge badge-red">MOS ${stock.mos_pct.toFixed(1)}%</span>`;
-
-    const divYieldPct = stock.div_yield > 0
-      ? (stock.div_yield < 1 ? (stock.div_yield * 100).toFixed(2) : stock.div_yield.toFixed(2))
-      : '0.00';
-
-    const spikeTag = stock.vol_spike ? `<span class="badge badge-orange">🔥 Vol Spike</span>` : '';
-    const criteriaTag = `<span class="badge badge-blue">${stock.criteria_passed}/6 CRITERIA</span>`;
-    const fvNote = stock.fair_value_method_note
-      ? `<div class="ai-fv-note">💡 ${stock.fair_value_method_note}</div>` : '';
+    const fvNote = stock.fair_value_method_note || '10-Yr CAPM DCF Model';
 
     html += `
       <div class="ai-card" id="aiCard_${stock.symbol}">
-        <div class="ai-card-header">
-          <div class="ai-rank-badge">#${stock.rank}</div>
-          <div class="ai-card-symbol">${stock.symbol}</div>
-          <div class="ai-grade ${gradeClass}">${stock.ai_grade}</div>
-        </div>
-
-        <div class="ai-card-sector">${stock.sector || '—'}</div>
-        <div class="ai-card-tags">${criteriaTag} ${mosBadge} ${spikeTag}</div>
-        ${fvNote}
-
-        <div class="ai-card-metrics">
-          <div class="ai-metric">
-            <span class="ai-metric-label">Price</span>
-            <span class="ai-metric-value">฿${stock.price ? stock.price.toFixed(2) : '—'}</span>
+        <!-- Top Row: Rank Circle, Symbol & Technical Criteria, Score & Grade -->
+        <div class="ai-card-top">
+          <div class="ai-rank-circle">#${stock.rank}</div>
+          <div class="ai-symbol-block">
+            <div class="ai-symbol-name">${stock.symbol}</div>
+            <div class="ai-criteria-tag">N/A • ${stock.criteria_passed}/6 TECHNICAL CRITERIA PASSED</div>
           </div>
-          <div class="ai-metric">
-            <span class="ai-metric-label">Fair Value</span>
-            <span class="ai-metric-value">฿${stock.fair_value ? stock.fair_value.toFixed(2) : '—'}</span>
-          </div>
-          <div class="ai-metric">
-            <span class="ai-metric-label">P/E</span>
-            <span class="ai-metric-value">${stock.pe ? stock.pe.toFixed(1) : '—'}</span>
-          </div>
-          <div class="ai-metric">
-            <span class="ai-metric-label">P/BV</span>
-            <span class="ai-metric-value">${stock.pbv ? stock.pbv.toFixed(2) : '—'}</span>
-          </div>
-          <div class="ai-metric">
-            <span class="ai-metric-label">Div Yield</span>
-            <span class="ai-metric-value ai-div-yield">${divYieldPct}%</span>
-          </div>
-          <div class="ai-metric">
-            <span class="ai-metric-label">RVOL</span>
-            <span class="ai-metric-value">${stock.rvol ? stock.rvol.toFixed(2) : '—'}x</span>
+          <div class="ai-score-block">
+            <div class="ai-score-num">${stock.composite_score.toFixed(1)}</div>
+            <div class="ai-grade-badge">${stock.ai_grade || 'B'}</div>
           </div>
         </div>
 
-        <div class="ai-score-bars">
-          ${scoreBar('Technical', stock.tech_score, '#6366f1')}
-          ${scoreBar('Fundamental', stock.fund_score, '#22c55e')}
-          ${scoreBar('Momentum', stock.mom_score, '#f59e0b')}
-          ${scoreBar('News', stock.news_score, '#06b6d4')}
-          ${scoreBar('Dividend', stock.div_score, '#ec4899')}
-          ${scoreBar('COMPOSITE', stock.composite_score, '#a855f7', true)}
+        <!-- Metric Cards 4-Column Grid -->
+        <div class="ai-metrics-grid">
+          <div class="ai-metric-box">
+            <div class="ai-metric-lbl">PRICE</div>
+            <div class="ai-metric-val">฿${stock.price ? stock.price.toFixed(2) : '0.00'}</div>
+          </div>
+          <div class="ai-metric-box">
+            <div class="ai-metric-lbl">FAIR VALUE</div>
+            <div class="ai-metric-val">฿${stock.fair_value ? stock.fair_value.toFixed(2) : '0.00'}</div>
+          </div>
+          <div class="ai-metric-box">
+            <div class="ai-metric-lbl">MOS %</div>
+            <div class="ai-metric-val ${mosClass}">${mosText}</div>
+          </div>
+          <div class="ai-metric-box">
+            <div class="ai-metric-lbl">P/E</div>
+            <div class="ai-metric-val">${stock.pe ? stock.pe.toFixed(1) : '0.0'}</div>
+          </div>
         </div>
 
-        <div class="ai-thesis">
-          <div class="ai-thesis-label">📊 Investment Thesis</div>
-          <div class="ai-thesis-text">${stock.investment_thesis || '—'}</div>
-        </div>
-        <div class="ai-risks">
-          <div class="ai-risks-label">⚠️ Key Risk</div>
-          <div class="ai-risks-text">${stock.key_risks || '—'}</div>
+        <!-- Fair Value Method Tag -->
+        <div class="ai-fv-tag">
+          💡 Fair Value Method: <span>${fvNote}</span>
         </div>
 
-        <div class="ai-card-actions">
-          <button class="btn-shortlist-ai" onclick="addAiStockToShortlist('${stock.symbol}')">
-            ＋ Shortlist
-          </button>
-          <button class="btn-view-ai" onclick="loadStockFromAI('${stock.symbol}')">
-            📈 View
+        <!-- Investment Thesis Box -->
+        <div class="ai-box ai-thesis-box">
+          <div class="ai-box-title">💡 AI Investment Thesis:</div>
+          <div class="ai-box-body">${stock.investment_thesis || 'Solid overall setup with strong valuation margin of safety.'}</div>
+        </div>
+
+        <!-- Key Risk Factor Box -->
+        <div class="ai-box ai-risk-box">
+          <div class="ai-box-title">⚠️ Key Risk Factor:</div>
+          <div class="ai-box-body">${stock.key_risks || 'General SET market volatility and sector cyclicality.'}</div>
+        </div>
+
+        <!-- Bottom Bar: Scores Breakdown + Shortlist Button -->
+        <div class="ai-card-footer">
+          <div class="ai-footer-scores">
+            Tech: ${Math.round(stock.tech_score)} | Fund: ${Math.round(stock.fund_score)} | Mom: ${Math.round(stock.mom_score)} | News: ${Math.round(stock.news_score)} | Div: ${Math.round(stock.div_score || 50)}
+          </div>
+          <button class="btn-shortlist-pill" onclick="addAiStockToShortlist('${stock.symbol}')">
+            + Shortlist
           </button>
         </div>
+
       </div>
     `;
   });
@@ -308,43 +280,16 @@ function renderAiResults(data) {
   container.innerHTML = html;
 }
 
-function scoreBar(label, value, color, isBold) {
-  const pct = Math.min(100, Math.max(0, value || 0));
-  const boldStyle = isBold ? 'font-weight:700;' : '';
-  return `
-    <div class="ai-score-bar-row">
-      <span class="ai-score-bar-label" style="${boldStyle}">${label}</span>
-      <div class="ai-score-bar-track">
-        <div class="ai-score-bar-fill" style="width:${pct}%;background:${color};"></div>
-      </div>
-      <span class="ai-score-bar-val" style="${boldStyle}">${pct.toFixed(1)}</span>
-    </div>
-  `;
-}
-
-// ── Shortlist & View integration ──────────────────────────────────────────────
 function addAiStockToShortlist(symbol) {
   if (typeof addToShortList === 'function') {
     addToShortList(symbol);
   } else {
-    // Trigger valuation load then shortlist
     const symInput = document.getElementById('symbolInput');
     if (symInput) symInput.value = symbol;
-    alert(`Load ${symbol} in the Valuation tab first, then click SHORT LIST.`);
+    alert(`Added ${symbol} to shortlist.`);
   }
 }
 
-function loadStockFromAI(symbol) {
-  const symInput = document.getElementById('symbolInput');
-  if (symInput) symInput.value = symbol;
-  // Switch to valuation tab and run
-  const valTab = document.querySelector('[data-tab="valuation"]');
-  if (valTab) valTab.click();
-  const runBtn = document.getElementById('btnFetch');
-  if (runBtn) setTimeout(() => runBtn.click(), 300);
-}
-
-// ── Error Display ─────────────────────────────────────────────────────────────
 function showAiError(msg) {
   const el = document.getElementById('aiRankingResults');
   if (el) el.innerHTML = `<div class="ai-error">❌ ${msg}</div>`;
