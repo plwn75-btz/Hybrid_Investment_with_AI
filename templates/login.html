@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Hybrid Investment</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background: var(--card);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h1 { font-weight: 600; margin-bottom: 0.5rem; color: #fff; }
+        p { color: #94a3b8; margin-bottom: 2rem; font-size: 0.9rem; }
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: #fff;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 0.5rem;
+            border: none;
+            background: var(--primary);
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        .error { color: #ef4444; margin-top: 1rem; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1>Welcome Back</h1>
+        <p>Please enter the access password</p>
+        <form method="POST">
+            <input type="password" name="password" placeholder="Password" required autofocus>
+            <button type="submit">Unlock System</button>
+        </form>
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+    </div>
+</body>
+</html>

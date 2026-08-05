@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HYBRID INVESTMENT – BTZ Inc. Ver. 4.0</title>
+<meta name="description" content="Hybrid Investment toolkit for SET-listed stocks: Technical Analysis, Intrinsic Valuation, and Momentum.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/screening.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+<!-- ============================================================ HEADER -->
+<div class="app-wrapper">
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-group">
+        <span class="logo-text">HYBRID INVESTMENT.</span>
+        <span class="logo-subtitle">TECHNICAL, VALUATION and MOMENTUM</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <span>Developed By<br><strong>BTZ Inc. Ver.4.0 2026</strong><br>Python Web Edition</span>
+    </div>
+  </header>
+
+  <!-- ====================================================== TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="screening">SCREENING</button>
+    <button class="tab-btn" data-tab="valuation">VALUATION</button>
+    <button class="tab-btn" data-tab="note">NOTE</button>
+    <button class="tab-btn" data-tab="momentum">MOMENTUM</button>
+    <button class="tab-btn" data-tab="news">NEWS</button>
+    <button class="tab-btn" data-tab="technical">TECHNICAL CHART</button>
+    <button class="tab-btn" data-tab="shortlist">SHORT LIST</button>
+  </div>
+
+  <!-- ===================================================== TAB: SCREENING -->
+  <div id="tab-screening" class="tab-content active">
+    <div class="screening-layout" style="display: flex; gap: 20px; padding: 20px;">
+      <!-- Input Panel -->
+      <section class="panel input-panel glass" id="inputPanel" style="flex: 0 0 320px;">
+        <h2 class="panel-title">
+          <span class="panel-icon">⚙️</span>
+          Screening Parameters
+        </h2>
+
+        <form id="screeningForm" autocomplete="off">
+          <div class="field">
+            <label for="dateInput">Analysis Date</label>
+            <input type="date" id="dateInput" value="{{ default_date }}" required>
+            <small id="dateHint" class="hint">Weekends auto-adjust to last Friday</small>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 18px;">
+            <div class="field" style="width: 100%;">
+              <label for="rsiInput">RSI Threshold</label>
+              <div class="input-with-slider">
+                <input type="range" id="rsiSlider" min="10" max="90" value="30">
+                <input type="number" id="rsiInput" min="10" max="90" value="30">
+              </div>
+              <small class="hint">Oversold below this value (default 30)</small>
+            </div>
+
+            <div class="field" style="width: 100%;">
+              <label for="stochInput">Stochastic Threshold</label>
+              <div class="input-with-slider">
+                <input type="range" id="stochSlider" min="10" max="90" value="70">
+                <input type="number" id="stochInput" min="10" max="90" value="70">
+              </div>
+              <small class="hint">Overbought above this value (default 70)</small>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-run" id="btnRun">
+            <span class="btn-icon">🚀</span>
+            <span class="btn-text">Run Screening</span>
+          </button>
+        </form>
+
+        <!-- Progress Bar -->
+        <div class="progress-section hidden" id="progressSection">
+          <div class="progress-info">
+            <span id="progressLabel">Analyzing stocks…</span>
+            <span id="progressPct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+          </div>
+          <small id="progressDetail" class="hint">0 / 0 stocks</small>
+        </div>
+
+        <!-- Criteria Legend -->
+        <div class="criteria-legend" style="margin-top: 20px;">
+          <h3>📋 Screening Criteria</h3>
+          <ol>
+            <li><span class="tag c1">C1</span> Close > EMA200 <em>and</em> EMA50 > EMA200</li>
+            <li><span class="tag c2">C2</span> RSI < threshold (oversold)</li>
+            <li><span class="tag c3">C3</span> MACD > 0</li>
+            <li><span class="tag c4">C4</span> Stochastic > threshold</li>
+            <li><span class="tag c5">C5</span> Close between BBL and BBM</li>
+            <li><span class="tag c6">C6</span> Close > Parabolic SAR</li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Results Panel -->
+      <section class="panel results-panel" id="resultsPanel" style="flex: 1; display: flex; flex-direction: column;">
+        <!-- Placeholder before first run -->
+        <div class="empty-state" id="emptyState" style="text-align: center; margin: auto;">
+          <div class="empty-icon" style="font-size: 48px;">📈</div>
+          <h2>No Results Yet</h2>
+          <p>Configure parameters and click <strong>Run Screening</strong> to analyse SET stocks.</p>
+        </div>
+
+        <!-- After run -->
+        <div class="results-content hidden" id="resultsContent">
+          <!-- Summary Cards -->
+          <div class="summary-header" id="summaryHeader" style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+            <div class="summary-meta">
+              <span id="summaryDate"></span>
+              <span id="summaryStats" style="margin-left: 15px; color: #888;"></span>
+            </div>
+          </div>
+
+          <div class="summary-cards" id="summaryCards" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px;">
+            <!-- Filled by JS -->
+          </div>
+
+          <!-- Tabs -->
+          <div class="tabs" id="screenTabs" style="display: flex; gap: 5px; margin-top: 15px; border-bottom: 1px solid #333; padding-bottom: 5px;">
+            <!-- Filled by JS -->
+          </div>
+
+          <!-- Table Container -->
+          <div class="table-wrap" id="screenTableWrap" style="margin-top: 15px; overflow-x: auto;">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Bottom Chart Drawer -->
+    <div id="screenChartDrawer" class="chart-drawer hidden">
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <span id="chartSymbolDisplay">SYMBOL</span> 
+          <span class="drawer-subtitle">Daily Technical Chart</span>
+        </div>
+        <button class="drawer-close" onclick="closeScreenChart()">×</button>
+      </div>
+      <div id="screenChartCanvas" class="chart-canvas"></div>
+    </div>
+  </div>
+
+  <!-- ===================================================== TAB: VALUATION -->
+  <div id="tab-valuation" class="tab-content">
+    <div class="valuation-layout">
+
+      <!-- ======================= LEFT PANEL -->
+      <div class="left-panel">
+
+        <!-- Symbol Input -->
+        <div class="panel-section symbol-section">
+          <div class="label-row">
+            <span class="field-label">SYMBOL</span>
+            <div class="symbol-input-group">
+              <input type="text" id="symbolInput" placeholder="e.g. AAV" maxlength="12" autocomplete="off" spellcheck="false">
+              <button class="btn-primary" id="submitBtn" onclick="runValuation()">SUBMIT</button>
+            </div>
+          </div>
+          <div id="status-box" class="status-box">Ready. Enter a SET stock symbol and click SUBMIT.</div>
+        </div>
+
+        <!-- SET Data -->
+        <div class="panel-section">
+          <div class="section-title">SET DATA</div>
+          <div class="company-info" id="companyInfoBox">
+            <span id="companyNameShort">—</span><br>
+            <span id="companySector" class="sector-tag">—</span>
+          </div>
+          <div class="info-row">
+            <span class="field-label small">Company (Full)</span>
+            <span id="companyFull" class="info-value">—</span>
+          </div>
+          <div class="info-row">
+            <span class="field-label small">Sector</span>
+            <span id="sectorDisplay" class="info-value">—</span>
+          </div>
+          <div class="info-row" style="display: flex; gap: 8px;">
+            <a id="websiteLink" href="#" target="_blank" class="btn-outline small" style="flex: 1; text-align: center;">Company Website</a>
+            <a id="consensusLink" href="#" target="_blank" class="btn-outline small" style="flex: 1; text-align: center; display: none; background-color: rgba(99,179,237,0.15); border-color: rgba(99,179,237,0.4); color: var(--accent-blue);">Consensus ↗</a>
+          </div>
+        </div>
+
+        <!-- Parameters -->
+        <div class="panel-section">
+          <div class="section-title">PARAMETERS</div>
+          <div class="param-row">
+            <label class="field-label small">10Yrs Bond Yield (%) <span id="bondSourceTag" class="thaibma-tag">{{ bond_yield_source }}</span></label>
+            <input type="number" id="bondYield" value="{{ bond_yield_default }}" step="0.001" min="0" max="20" class="param-input">
+          </div>
+          <div class="param-row">
+            <label class="field-label small">P/E Benchmark</label>
+            <input type="number" id="perBenchmark" value="15" step="0.5" min="1" max="100" class="param-input">
+          </div>
+          <div class="param-row">
+            <label class="field-label small">P/BV Benchmark</label>
+            <input type="number" id="pbvBenchmark" value="1.5" step="0.1" min="0.1" max="10" class="param-input">
+          </div>
+        </div>
+
+        <!-- Trial & Simulation -->
+        <div class="panel-section trial-section">
+          <div class="section-title">TRIAL &amp; SIMULATION</div>
+          <div class="param-row">
+            <label class="field-label small">Sale Growth (%)</label>
+            <div class="sim-row">
+              <input type="number" id="saleGrowth" value="5" step="0.5" min="-50" max="100" class="param-input">
+              <button class="btn-accent" onclick="runValuation()">SUBMIT</button>
+            </div>
+          </div>
+          <div class="note-small">Note: Enter Sale Growth % and click SUBMIT to recalculate.</div>
+        </div>
+
+        <!-- Short List Button -->
+        <div class="panel-section">
+          <div class="btn-row">
+            <button class="btn-outline" onclick="addToShortList()">SHORT LIST</button>
+            <button class="btn-ghost" onclick="clearResult()">CLEAR</button>
+          </div>
+        </div>
+
+        <!-- WACC Info -->
+        <div class="panel-section">
+          <div class="info-row">
+            <span class="field-label small">WACC</span>
+            <span id="waccDisplay" class="info-value highlight-val">—</span>
+          </div>
+          <div class="info-row">
+            <span class="field-label small">Shares (M)</span>
+            <span id="sharesDisplay" class="info-value">—</span>
+          </div>
+          <div class="info-row">
+            <span class="field-label small">Market Cap (MB)</span>
+            <span id="mktCapDisplay" class="info-value">—</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ======================= RIGHT PANEL -->
+      <div class="right-panel">
+
+        <!-- VALUATION RESULTS BOX -->
+        <div class="valuation-box">
+          <div class="valuation-box-title">VALUATION</div>
+
+          <div class="val-grid">
+            <!-- Company + Price Row -->
+            <div class="val-row company-row">
+              <span class="val-label">COMPANY</span>
+              <span id="val-company" class="val-value company-val">—</span>
+            </div>
+            <div class="val-row">
+              <span class="val-label">CURRENT PRICE</span>
+              <span id="val-price" class="val-value price-val">—</span>
+              <span class="val-unit">THB</span>
+            </div>
+
+            <!-- 52Wk -->
+            <div class="val-row">
+              <span class="val-label">52Wks Hi / Lo</span>
+              <span id="val-hi" class="val-value">—</span>
+              <span class="val-sep">/</span>
+              <span id="val-lo" class="val-value">—</span>
+            </div>
+
+            <!-- Divider -->
+            <div class="val-divider"></div>
+
+            <!-- Fair Value DCF -->
+            <div class="val-row fv-row">
+              <span class="val-label" id="label-fv-dcf">FAIR VALUE (DCF)</span>
+              <span id="fv-dcf" class="val-value fv-val">—</span>
+              <span class="val-unit">THB</span>
+              <span class="mos-badge" id="mos-dcf">—</span>
+            </div>
+            <div class="val-row assume-row">
+              <span class="val-label-sm">Assume sale growth is</span>
+              <span id="assume-growth" class="val-value-sm">—%</span>
+              <span class="val-label-sm">M.O.S</span>
+            </div>
+
+            <!-- Sensitivity Check -->
+            <div class="val-row sens-row">
+              <span class="val-label">SENSITIVITY CHECK</span>
+              <div class="sens-range">
+                <span class="sens-label">MIN.</span>
+                <span id="sens-min" class="sens-val">—</span>
+                <span class="sens-sep">-</span>
+                <span class="sens-label">MAX.</span>
+                <span id="sens-max" class="sens-val">—</span>
+                <span class="val-unit">THB</span>
+              </div>
+            </div>
+
+            <div class="val-divider"></div>
+
+            <!-- Fair Value DIV -->
+            <div class="val-row fv-row">
+              <span class="val-label" id="label-fv-div">FAIR VALUE (DIV.)</span>
+              <span id="fv-div" class="val-value fv-val">—</span>
+              <span class="val-unit">THB</span>
+              <span class="mos-badge" id="mos-div">—</span>
+            </div>
+
+            <!-- Fair Value DDM -->
+            <div class="val-row fv-row">
+              <span class="val-label" id="label-fv-ddm">FAIR VALUE (DDM)</span>
+              <span id="fv-ddm" class="val-value fv-val">—</span>
+              <span class="val-unit">THB</span>
+              <span class="mos-badge" id="mos-ddm">—</span>
+            </div>
+
+            <!-- Fair Value PER -->
+            <div class="val-row fv-row">
+              <span class="val-label">FAIR VALUE (PER)</span>
+              <span id="fv-per" class="val-value fv-val">—</span>
+              <span class="val-unit">THB</span>
+              <span class="mos-badge" id="mos-per">—</span>
+            </div>
+
+            <!-- Fair Value PBV -->
+            <div class="val-row fv-row">
+              <span class="val-label">FAIR VALUE (PBV)</span>
+              <span id="fv-pbv" class="val-value fv-val">—</span>
+              <span class="val-unit">THB</span>
+              <span class="mos-badge" id="mos-pbv">—</span>
+            </div>
+          </div>
+
+          <!-- =========== METRICS GRID =========== -->
+          <div class="metrics-divider"></div>
+          <div class="metrics-grid">
+            <div class="metric-tile" id="m-pe">
+              <div class="mt-label">P/E</div>
+              <div class="mt-value" id="mv-pe">—</div>
+            </div>
+            <div class="metric-tile" id="m-pbv">
+              <div class="mt-label">P/BV</div>
+              <div class="mt-value" id="mv-pbv">—</div>
+            </div>
+            <div class="metric-tile" id="m-peg">
+              <div class="mt-label">PEG</div>
+              <div class="mt-value" id="mv-peg">—</div>
+            </div>
+            <div class="metric-tile">
+              <div class="mt-label">EBITDA</div>
+              <div class="mt-value" id="mv-ebitda">—</div>
+            </div>
+
+            <div class="metric-tile" id="m-eps">
+              <div class="mt-label">EPS</div>
+              <div class="mt-value" id="mv-eps">—</div>
+            </div>
+            <div class="metric-tile" id="m-de">
+              <div class="mt-label">D/E</div>
+              <div class="mt-value" id="mv-de">—</div>
+            </div>
+            <div class="metric-tile">
+              <div class="mt-label">F.YIEL</div>
+              <div class="mt-value" id="mv-fyield">—</div>
+            </div>
+            <div class="metric-tile">
+              <div class="mt-label">EV</div>
+              <div class="mt-value" id="mv-ev">—</div>
+            </div>
+
+            <div class="metric-tile" id="m-roa">
+              <div class="mt-label">ROA</div>
+              <div class="mt-value" id="mv-roa">—</div>
+            </div>
+            <div class="metric-tile">
+              <div class="mt-label">DPS</div>
+              <div class="mt-value" id="mv-dps">—</div>
+            </div>
+            <div class="metric-tile">
+              <div class="mt-label">PAYOUT</div>
+              <div class="mt-value" id="mv-payout">—</div>
+            </div>
+            <div class="metric-tile">
+              <div class="mt-label">EV/EBITD</div>
+              <div class="mt-value" id="mv-eveb">—</div>
+            </div>
+
+            <div class="metric-tile" id="m-gpm">
+              <div class="mt-label">GPM</div>
+              <div class="mt-value" id="mv-gpm">—</div>
+            </div>
+            <div class="metric-tile">
+              <div class="mt-label">EBIT MG.</div>
+              <div class="mt-value" id="mv-ebit">—</div>
+            </div>
+            <div class="metric-tile" id="m-epsg">
+              <div class="mt-label">F.EPS GR.</div>
+              <div class="mt-value" id="mv-epsg">—</div>
+            </div>
+            <div class="metric-tile" id="m-saleg">
+              <div class="mt-label">SALE GR.</div>
+              <div class="mt-value" id="mv-saleg">—</div>
+            </div>
+
+            <div class="metric-tile" id="m-ps">
+              <div class="mt-label">P/S</div>
+              <div class="mt-value" id="mv-ps">—</div>
+            </div>
+            <div class="metric-tile" id="m-rotc">
+              <div class="mt-label">ROTC</div>
+              <div class="mt-value" id="mv-rotc">—</div>
+            </div>
+            <div class="metric-tile" id="m-roic">
+              <div class="mt-label">ROIC</div>
+              <div class="mt-value" id="mv-roic">—</div>
+            </div>
+            <div class="metric-tile" id="m-mktrev">
+              <div class="mt-label">MKT/REV</div>
+              <div class="mt-value" id="mv-mktrev">—</div>
+            </div>
+          </div>
+
+          <!-- =========== DUPONT =========== -->
+          <div class="dupont-section">
+            <span class="dupont-title">DuPont Analysis</span>
+            <div class="dupont-row">
+              <div class="dp-box">
+                <div class="dp-label">NPM</div>
+                <div class="dp-val" id="dp-npm">—</div>
+              </div>
+              <div class="dp-op">×</div>
+              <div class="dp-box">
+                <div class="dp-label">Asset T/O</div>
+                <div class="dp-val" id="dp-at">—</div>
+              </div>
+              <div class="dp-op">×</div>
+              <div class="dp-box">
+                <div class="dp-label">Fin. Lev.</div>
+                <div class="dp-val" id="dp-fl">—</div>
+              </div>
+              <div class="dp-op">=</div>
+              <div class="dp-box dp-result">
+                <div class="dp-label">ROE</div>
+                <div class="dp-val" id="dp-roe">—</div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- end valuation-box -->
+      </div><!-- end right-panel -->
+    </div><!-- end valuation-layout -->
+  </div><!-- end tab-valuation -->
+
+  <!-- ===================================================== TAB: NOTE -->
+  <div id="tab-note" class="tab-content">
+    <div class="note-layout">
+      <div class="note-card">
+        <div class="note-section-title">HIGHLIGHT</div>
+        <div class="note-box" id="highlightBox">—</div>
+      </div>
+      <div class="note-card">
+        <div class="note-section-title">DIVIDEND POLICY</div>
+        <div class="note-box" id="dividendPolicyBox">—</div>
+        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span class="ft-label" style="font-weight: 600; color: var(--text-muted); font-size: 0.72rem;">Last XD Date:</span>
+            <span id="lastXdDateBox" style="font-weight: bold; color: var(--text-primary); font-size: 0.8rem;">—</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span class="ft-label" style="font-weight: 600; color: var(--text-muted); font-size: 0.72rem;">Upcoming XD Date:</span>
+            <span id="xdDateBox" style="font-weight: bold; color: var(--accent-gold); font-size: 0.8rem;">—</span>
+          </div>
+        </div>
+      </div>
+      <div class="note-card">
+        <div class="note-section-title">FORECAST SUMMARY</div>
+        <div class="forecast-table" id="forecastTable">
+          <div class="ft-row"><span class="ft-label">Forecast Annual EPS</span><span id="ft-eps" class="ft-val">—</span></div>
+          <div class="ft-row"><span class="ft-label">Forecast Price</span><span id="ft-price" class="ft-val">—</span></div>
+          <div class="ft-row"><span class="ft-label">MOS (Forecast)</span><span id="ft-mos" class="ft-val">—</span></div>
+          <div class="ft-row"><span class="ft-label">Forecast DPS</span><span id="ft-dps" class="ft-val">—</span></div>
+          <div class="ft-row"><span class="ft-label">Forecast Yield</span><span id="ft-yield" class="ft-val">—</span></div>
+          <div class="ft-row"><span class="ft-label">YoY EPS Growth</span><span id="ft-epsG" class="ft-val">—</span></div>
+        </div>
+      </div>
+    </div><!-- end note-layout -->
+
+    <!-- Financial Performance Charts -->
+    <div style="margin-top: 15px;">
+      <div class="note-card">
+        <div class="note-section-header">
+          <div class="note-section-title" id="finChartTitle">FINANCIAL PERFORMANCE (10 YEARS)</div>
+          <div class="fin-chart-toggle">
+            <button id="btnAnnual" class="toggle-btn active" onclick="switchFinView('annual')">ANNUAL</button>
+            <button id="btnQuarterly" class="toggle-btn" onclick="switchFinView('quarterly')">QUARTERLY</button>
+          </div>
+        </div>
+        <div class="financial-charts-grid">
+          <div class="fin-chart-box">
+            <div class="chart-title">FINANCIALS: REVENUE & NET PROFIT</div>
+            <canvas id="finChartLeft"></canvas>
+          </div>
+          <div class="fin-chart-box">
+            <div class="chart-title">EARNINGS PER SHARE (EPS) HISTORY</div>
+            <canvas id="finChartRight"></canvas>
+          </div>
+        </div>
+        <div class="financial-charts-grid financial-charts-grid-3" style="margin-top: 12px;">
+          <div class="fin-chart-box">
+            <div class="chart-title">NET CASH FROM OPERATING ACTIVITIES</div>
+            <canvas id="finChartCFO"></canvas>
+          </div>
+          <div class="fin-chart-box">
+            <div class="chart-title">D/E RATIO HISTORY</div>
+            <canvas id="finChartDE"></canvas>
+          </div>
+          <div class="fin-chart-box">
+            <div class="chart-title">DIVIDEND PER SHARE (DPS)</div>
+            <canvas id="finChartDPS"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- end tab-note -->
+
+  <!-- ===================================================== TAB: MOMENTUM -->
+  <div id="tab-momentum" class="tab-content">
+    <div class="momentum-layout">
+
+      <!-- Signal Dashboard -->
+      <div class="momentum-signals">
+        <div class="signal-card" id="sig-volume">
+          <div class="signal-icon">🔥</div>
+          <div class="signal-title">VOLUME SPIKE</div>
+          <div class="signal-value" id="sig-vol-ratio">—</div>
+          <div class="signal-sub" id="sig-vol-detail">Today vs 5D Avg</div>
+        </div>
+        <div class="signal-card" id="sig-gap">
+          <div class="signal-icon">📈</div>
+          <div class="signal-title">PRICE GAP</div>
+          <div class="signal-value" id="sig-gap-value">—</div>
+          <div class="signal-sub" id="sig-gap-detail">Open vs Prev Close</div>
+        </div>
+        <div class="signal-card" id="sig-momentum">
+          <div class="signal-icon">⚡</div>
+          <div class="signal-title">MOMENTUM</div>
+          <div class="signal-value" id="sig-mom-signal">—</div>
+          <div class="signal-sub" id="sig-mom-detail">Combined Signal</div>
+        </div>
+      </div>
+
+      <!-- Volume Summary -->
+      <div class="momentum-summary">
+        <div class="mom-stat">
+          <span class="mom-stat-label">Today Volume</span>
+          <span class="mom-stat-value" id="mom-today-vol">—</span>
+        </div>
+        <div class="mom-stat">
+          <span class="mom-stat-label">5D Avg Volume</span>
+          <span class="mom-stat-value" id="mom-5d-vol">—</span>
+        </div>
+        <div class="mom-stat">
+          <span class="mom-stat-label">20D Avg Volume</span>
+          <span class="mom-stat-value" id="mom-20d-vol">—</span>
+        </div>
+        <div class="mom-stat">
+          <span class="mom-stat-label">Price Change</span>
+          <span class="mom-stat-value" id="mom-price-chg">—</span>
+        </div>
+        <div class="mom-stat">
+          <span class="mom-stat-label">Consec. Up</span>
+          <span class="mom-stat-value" id="mom-consec-up">—</span>
+        </div>
+        <div class="mom-stat">
+          <span class="mom-stat-label">Consec. Down</span>
+          <span class="mom-stat-value" id="mom-consec-dn">—</span>
+        </div>
+      </div>
+
+      <!-- Institute vs Retail -->
+      <div class="inst-retail-bar">
+        <div class="irb-title">ESTIMATED INVESTOR TYPE</div>
+        <div class="irb-container">
+          <div class="irb-fill irb-inst" id="irb-inst" style="width:30%">
+            <span>INST <span id="irb-inst-pct">30</span>%</span>
+          </div>
+          <div class="irb-fill irb-retail" id="irb-retail" style="width:70%">
+            <span>RETAIL <span id="irb-retail-pct">70</span>%</span>
+          </div>
+        </div>
+        <div class="irb-note">* Estimated based on volume heuristics</div>
+      </div>
+
+      <!-- Volume Chart -->
+      <div class="chart-section">
+        <div class="chart-title chart-title-sm">VOLUME HISTORY (1 Month)</div>
+        <canvas id="volumeChart" width="900" height="250"></canvas>
+      </div>
+
+      <!-- OHLCV Table -->
+      <div class="momentum-table-wrap">
+        <div class="chart-title">DAILY OHLCV DATA</div>
+        <div class="table-wrapper">
+          <table class="momentum-table" id="momentumTable">
+            <thead>
+              <tr>
+                <th>Date</th><th>Open</th><th>High</th><th>Low</th><th>Close</th>
+                <th>Volume</th><th>Change %</th>
+              </tr>
+            </thead>
+            <tbody id="momentumBody">
+              <tr><td colspan="7" class="empty-msg">Run valuation to see momentum data.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- end tab-momentum -->
+
+  <!-- ===================================================== TAB: NEWS -->
+  <div id="tab-news" class="tab-content">
+    <div class="news-layout">
+
+      <!-- Source Filter -->
+      <div class="news-filter-bar">
+        <span class="section-title" style="margin:0">NEWS FEED</span>
+        <div class="news-filters" id="newsFilters">
+          <button class="news-filter-btn active" data-source="all">ALL</button>
+        </div>
+        <span class="news-count" id="newsCount">0 articles</span>
+      </div>
+
+      <!-- News Feed -->
+      <div class="news-feed" id="newsFeed">
+        <div class="news-empty">Run valuation to see news for the selected stock.</div>
+      </div>
+    </div>
+  </div><!-- end tab-news -->
+
+  <!-- ===================================================== TAB: SHORT LIST -->
+  <div id="tab-shortlist" class="tab-content">
+    <div class="shortlist-toolbar">
+      <span class="section-title" style="margin:0">SHORT LIST</span>
+      <button class="btn-ghost small" onclick="clearShortList()">CLEAR LIST</button>
+    </div>
+    <div class="table-wrapper">
+      <table class="shortlist-table" id="shortlistTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Symbol</th><th>Price</th>
+            <th>FV DCF</th><th>FV DIV</th><th>FV DDM</th><th>FV PER</th><th>FV PBV</th>
+            <th>MOS DCF</th><th>P/E</th><th>ROE</th><th>D/E</th>
+            <th>EPS Gr</th><th>Sale Gr</th><th>Yield</th><th>Date</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="shortlistBody">
+          <tr><td colspan="17" class="empty-msg">No stocks added yet. Click SHORT LIST after valuation.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  </div><!-- end tab-shortlist -->
+
+  <!-- ===================================================== TAB: TECHNICAL -->
+  <div id="tab-technical" class="tab-content">
+    <div style="padding: 20px; max-width: 1400px; margin: 0 auto;">
+      <div class="drawer-header" style="justify-content: flex-start; margin-bottom: 15px;">
+        <div class="drawer-title" style="font-size: 1.5rem;">
+          <span id="techTabSymbolDisplay">SYMBOL</span> 
+          <span class="drawer-subtitle">Daily Technical Chart</span>
+        </div>
+      </div>
+      <div id="valTechChartCanvas" class="chart-canvas" style="height: 650px; width: 100%; border-radius: 8px; overflow: hidden;"></div>
+    </div>
+  </div><!-- end tab-technical -->
+
+</div><!-- end app-wrapper -->
+
+<!-- LOADING OVERLAY -->
+<div id="loadingOverlay" class="loading-overlay hidden">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Fetching data from SET / yfinance…</div>
+</div>
+
+<script src="/static/screening.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
